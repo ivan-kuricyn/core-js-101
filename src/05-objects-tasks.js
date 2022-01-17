@@ -20,8 +20,11 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+
+  Rectangle.prototype.getArea = () => this.height * this.width;
 }
 
 
@@ -35,8 +38,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +54,8 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  return new proto.constructor(...Object.values(JSON.parse(json)));
 }
 
 
@@ -110,36 +113,91 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
-const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
+class MySuperBaseSelectorClass {
+  constructor(value, ids, elements, pseudoElements, classes, pseudoClasses, attrs) {
+    this.value = value || '';
+    this.ids = ids || 0;
+    this.elements = elements || 0;
+    this.pseudoElements = pseudoElements || 0;
+    this.classes = classes || 0;
+    this.pseudoClasses = pseudoClasses || 0;
+    this.attrs = attrs || 0;
+  }
 
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
+  element(value) {
+    if (this.elements === 1) {
+      throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+    if (this.ids > this.elements) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}${value}`,
+      this.ids, this.elements + 1, this.pseudoElements,
+      this.classes, this.pseudoClasses, this.attrs);
+  }
 
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
+  id(value) {
+    if (this.ids === 1) {
+      throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+    if (this.pseudoElements > this.ids) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    if (this.classes > this.ids) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}#${value}`,
+      this.ids + 1, this.elements, this.pseudoElements,
+      this.classes, this.pseudoClasses, this.attrs);
+  }
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
+  class(value) {
+    if (this.attrs > this.classes) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}.${value}`,
+      this.ids, this.elements, this.pseudoElements,
+      this.classes + 1, this.pseudoClasses, this.attrs);
+  }
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
+  attr(value) {
+    if (this.pseudoClasses > this.attrs) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}[${value}]`,
+      this.ids, this.elements, this.pseudoElements,
+      this.classes, this.pseudoClasses, this.attrs + 1);
+  }
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
+  pseudoClass(value) {
+    if (this.pseudoElements > this.pseudoClasses) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}:${value}`,
+      this.ids, this.elements, this.pseudoElements,
+      this.classes, this.pseudoClasses + 1, this.attrs);
+  }
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
-};
+  pseudoElement(value) {
+    if (this.pseudoElements === 1) {
+      throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+    return new MySuperBaseSelectorClass(`${this.value}::${value}`,
+      this.ids, this.elements, this.pseudoElements + 1,
+      this.classes, this.pseudoClasses, this.attrs);
+  }
 
+  stringify() {
+    return this.value;
+  }
+
+  combine(selector1, combinator, selector2) {
+    const value = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return new MySuperBaseSelectorClass(`${this.value}${value}`);
+  }
+}
+
+const cssSelectorBuilder = new MySuperBaseSelectorClass();
 
 module.exports = {
   Rectangle,
